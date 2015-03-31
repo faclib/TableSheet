@@ -13,7 +13,6 @@ install:
 script: phpunit
 
 notifications:
-  email:
-    - fobia3d@gmail.com
+  email: false
   on_success: never
   on_failure: always
