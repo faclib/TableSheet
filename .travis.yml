@@ -1,0 +1,19 @@
+language: php
+
+php:
+  - "5.5"
+  - "5.4"
+  - "5.3"
+
+install:
+  - sudo apt-get install python python-pip
+  - sudo pip install chardet chardet2 xlrd xlsx2csv xlwt
+  - composer install --prefer-dist --dev
+
+script: phpunit
+
+notifications:
+  email:
+    - fobia3d@gmail.com
+  on_success: never
+  on_failure: always

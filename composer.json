@@ -1,0 +1,16 @@
+{
+    "name": "fobia/php-tablesheets",
+    "type": "library",
+    "description": "PHP Table Sheets",
+    "license": "MIT",
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "require-dev": {
+        "phpoffice/phpexcel": "dev-develop"
+    },
+    "autoload": {
+        "psr-0": { "Fobia\\": "src/" }
+    },
+    "minimum-stability": "dev"
+}
