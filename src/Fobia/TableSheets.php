@@ -9,12 +9,6 @@
 
 namespace Fobia;
 
-if (!class_exists('\\PHPExcel')) {
-    if(!@include_once('PHPExcel.php')) {
-        @include_once('phpexcel/PHPExcel.php');
-    }
-}
-
 /**
  * TableSheets class
  *
@@ -23,6 +17,7 @@ if (!class_exists('\\PHPExcel')) {
 class TableSheets
 {
     const CMD_TO_CSV = 'to-csv.py';
+    const CMD_TO_XLS = 'to-xls.py';
 
     /**
      * Определяет формат таблицы
@@ -72,13 +67,141 @@ class TableSheets
             $pFilename, $outfile);
 
         $res = shell_exec($cmd);
-        if (!preg_match('/error/i', $res)) {
+        if (!preg_match('/error:/i', $res)) {
             return true;
         } else {
-            echo $res;
+            // echo $res;
         }
 
         return false;
+    }
+    
+    /**
+     * Конвертирует CSV в XML с помощью python утилит
+     * 
+     * @param string $csvFile     входной CSV файл правельного формата
+     * @param string $outputFile  сохраняемый файл
+     * @param string $sheetname   название листа
+     * @return boolean
+     */
+    public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1")
+    {
+        $cmd = sprintf("%s --sheetname '%s' '%s' '%s'",
+            self::getProg(self::CMD_TO_XLS),
+            $sheetname,
+            $csvFile, $outputFile);
+        $res = shell_exec($cmd);
+        
+        if (!preg_match('/error:/i', $res)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Конвертирует CSV файл в XLS(Excel) формат
+     *
+     * @param type $csvFile
+     * @param type $outputFile
+     */
+    public static function toXls2($csvFile, $outputFile = null, $options = array())
+    {
+        if (!class_exists('\\PHPExcel')) {
+            if(!@include_once('PHPExcel.php')) {
+                @include_once('phpexcel/PHPExcel.php');
+            }
+            if (!class_exists('\\PHPExcel', false)) {
+                throw new \RuntimeException("Не удалось загрузить класс 'PHPExcel'");
+            }
+        }
+
+        if ($outputFile === null) {
+            $tmp = "/tmp";
+            if (isset($_SERVER['tmp'])) {
+                if (is_dir($_SERVER['tmp'])) {
+                    $tmp = $_SERVER['tmp'];
+                }
+            }
+            $outputFile = tempnam($tmp, "excel_");
+        }
+
+        $objReader = new \PHPExcel_Reader_CSV();
+        $objReader->setDelimiter(",");
+        $objReader->setEnclosure('"');
+
+        $objPHPExcel = $objReader->load($csvFile);
+        $objPHPExcel->setActiveSheetIndex(0);
+        $objPHPExcel->getActiveSheet()->setTitle('Sheet1');
+        $objPHPExcel->getDefaultStyle()->getFont()
+            ->setName('Arial')
+            ->setSize(10);
+
+        $objPHPExcel->getActiveSheet()->calculateColumnWidths();
+
+        $rows =  $objPHPExcel->getActiveSheet()->getHighestRow();
+        $columns =  $objPHPExcel->getActiveSheet()->getHighestColumn();
+        $eCell = $columns.$rows;
+
+        for ($i = \PHPExcel_Cell::columnIndexFromString($columns); $i >= 0; $i--) {
+            $objPHPExcel->getActiveSheet()->getColumnDimensionByColumn($i)->setAutoSize(true);
+        }
+
+        // $objPHPExcel->getActiveSheet()->getStyle("A1:".$eCell)->getAlignment()->setWrapText(true);
+        $objPHPExcel->getActiveSheet()->getStyle("A1:".$eCell)->getAlignment()->setVertical(\PHPExcel_Style_Alignment::VERTICAL_TOP);
+        $objPHPExcel->getActiveSheet()->getStyle("A1:".$eCell)->getAlignment()->setHorizontal(\PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
+
+
+        // HEAD
+        $headRow = $objPHPExcel->getActiveSheet()->getStyle('A1:'.$columns.'1');
+        $headRow->getAlignment()->setVertical(\PHPExcel_Style_Alignment::VERTICAL_CENTER);
+        $headRow->getFont()->setBold(true);
+        // $headRow->getFont()->setColor($pValue);
+
+        $color = array(
+            'red' => array(
+                'color' => 'FF9C0006',
+                'fill' => 'FFFFC7CE',
+                'borders' => 'FFD99795',
+                ),
+            'yellow' => array(
+                'color' => 'FF000000',
+                'fill' => 'FFF4ECC5',
+                'borders' => 'FFCCC085',
+                ),
+        );
+        $headRow->applyFromArray(
+                array(
+                    'fill'    => array(
+                        'type'  => \PHPExcel_Style_Fill::FILL_SOLID,
+                        'color' => array('argb' => 'FFF4ECC5')
+                    ),
+                    'borders' => array(
+                        'inside' => array('style' => \PHPExcel_Style_Border::BORDER_THIN, 'color' => array('argb' => 'FFCCC085')),
+                        'bottom' => array('style' => \PHPExcel_Style_Border::BORDER_THIN, 'color' => array('argb' => 'FFCCC085')),
+                        'right'  => array('style' => \PHPExcel_Style_Border::BORDER_THIN, 'color' => array('argb' => 'FFCCC085'))
+                    )
+                )
+        );
+        $objPHPExcel->getActiveSheet()->freezePane('A2');
+        $objPHPExcel->getActiveSheet()->getProtection()->setSheet(true);
+        $objPHPExcel->getActiveSheet()
+            ->getStyle('A2:'.$eCell)
+            ->getProtection()->setLocked(
+                \PHPExcel_Style_Protection::PROTECTION_UNPROTECTED
+            );
+        $objPHPExcel->getActiveSheet()
+            ->getStyle('A2')
+            ->getProtection()->setLocked(
+                \PHPExcel_Style_Protection::PROTECTION_UNPROTECTED
+            );
+        /**/
+        $objWriter = \PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save($outputFile);
+
+        $objPHPExcel->disconnectWorksheets();
+
+        return $outputFile;
     }
 
     /**

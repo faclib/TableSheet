@@ -4,13 +4,14 @@
 
 __author__ = 'Dmitriy Tyurin <fobia3d@gmail.com>'
 __license__ = "MIT"
-__version__ = '1.0'
+__version__ = '1.1'
 
 import chardet
 import codecs
 import cStringIO
 import csv
 import os
+import os.path
 import re
 import subprocess
 import sys
@@ -20,8 +21,8 @@ import xlrd
 import xlwt
 
 # Кодировка по умолчанию
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
 # ------------------------------
 
 
@@ -35,26 +36,11 @@ def unicode_name(filename, encoding='utf-8'):
 # -----------------------------------------------
 
 
-def utf8_encode(text):
+def utf8_encode(text, encoding='utf-8'):
     u"""
     Конвертирует строку в кодировку utf-8
     """
 
-    enc = chardet.detect(text).get("encoding")
-    if enc and enc.lower() != "utf-8":
-        try:
-            text = text.decode(enc)
-            text = text.encode("utf-8")
-        except:
-            pass
-    else:
-        pass
-
-    return text
-# -----------------------------------------------
-
-
-def iconv_encode(text, encoding='utf-8'):
     enc = chardet.detect(text).get("encoding")
     if enc and enc.lower() != encoding:
         try:
@@ -93,6 +79,31 @@ def utf8_file_encode(filename, in_place=False):
 # -----------------------------------------------
 
 
+def utf8_open_file(filename):
+    u"""
+    Открывает файл для чтения в формате utf-8
+    """
+
+    filename = unicode_name(filename)
+    encoding='utf-8'
+
+    F = open(filename, 'rb')
+    text = F.read()
+    enc = chardet.detect(text).get("encoding")
+    if enc and enc.lower() != encoding:
+        try:
+            text = text.decode(enc)
+            text = text.encode(encoding)
+            F.close()
+            F = tempfile.TemporaryFile()
+            F.write(text)
+        except:
+            raise RuntimeError("Не удалось преобразовать кодировку")
+    F.seek(0)
+    return F
+# -----------------------------------------------
+
+
 def get_type_sheet(filename):
     u"""
     Тип таблици (CSV, XLS, XLSX)
@@ -127,8 +138,12 @@ def get_type_sheet(filename):
 
 
 def get_writer(filename=False, windows=False):
+    u"""
+    Создает объект класса CSVUnicodeWriter для записи
+    """
+
     if type(filename) == str or type(filename) == unicode:
-        W = open(filename, 'wb')
+        W = open(unicode_name(filename), 'wb')
     elif type(filename) == file:
         W = filename
     elif filename == False:
@@ -153,6 +168,11 @@ def get_writer(filename=False, windows=False):
 
 
 def get_reader(filename, typesheet=None):
+    u"""
+    Создает правельный объект класса CSVUnicodeReader для чтения CSV.
+    При необходимост преобразует формат.
+    """
+
     filename = unicode_name(filename)
     if type(typesheet) == types.NoneType:
         typesheet = get_type_sheet(filename)
@@ -173,13 +193,13 @@ def get_reader(filename, typesheet=None):
             except Exception, e:
                 pass
 
-            raise ValueError("Не удалось определить формат файла")
+            raise RuntimeError("Не удалось определить формат файла")
         out = proc.stdout.read()
 
         f = open(temp.name, 'rb')
         reader = CSVUnicodeReader(f)
     else:
-        raise ValueError("Не удалось определить формат файла")
+        raise RuntimeError("Не удалось определить формат файла")
 
     return reader
 # -----------------------------------------------
@@ -192,7 +212,7 @@ def detect_dialect(f):
 
     try:
         f.seek(0)
-        dialect = csv.Sniffer().sniff(f.read(), delimiters=';,')
+        dialect = csv.Sniffer().sniff(f.read(), delimiters=';,|\t')
     except Exception, e:
         f.seek(0)
         dialect=csv.excel
@@ -232,6 +252,11 @@ def parse_xlsx(filename, output, windows=False):
 
 
 def convert_to_csv(filename, output, windows=False):
+    filename = unicode_name(filename)
+
+    if not os.path.isfile(filename) or not os.access(filename, os.R_OK):
+        raise RuntimeError("Либо файл отсутствует или не читается")
+
     if parse_xlsx(filename, output, windows=windows):
         return True
 
@@ -239,10 +264,10 @@ def convert_to_csv(filename, output, windows=False):
         reader = XLSReader(filename)
     except:
         try:
-            f = utf8_file_encode(filename)
+            f = utf8_open_file(filename)
             reader = CSVUnicodeReader(f)
         except:
-            raise ValueError("Не удалось преобразовать в CSV")
+            raise RuntimeError("Не удалось преобразовать в CSV")
 
     writer = get_writer(output, windows=windows)
     writer.write_reader(reader)
@@ -318,7 +343,6 @@ class CSVUnicodeWriter:
         F = self.stream
         if type(seek) == int:
             F.seek(seek)
-
         return F
 # -----------------------------------------------
 
@@ -347,27 +371,79 @@ class XLSReader:
 # -----------------------------------------------
 
 
+class FitSheetWrapper(object):
+    """Try to fit columns to max size of any entry.
+    To use, wrap this around a worksheet returned from the
+    workbook's add_sheet method, like follows:
+
+        sheet = FitSheetWrapper(book.add_sheet(sheet_name))
+
+    The worksheet interface remains the same: this is a drop-in wrapper
+    for auto-sizing columns.
+    """
+    def __init__(self, sheet):
+        self.sheet = sheet
+        self.widths = dict()
+
+    def write(self, r, c, label='', *args, **kwargs):
+        self.sheet.write(r, c, label, *args, **kwargs)
+        # width = str(label).__len__() / 0.02
+        width = (str(label).__len__() + 1) * 200
+
+        # 12.29 = 0x0d00 + 6 = 3334
+        # 12.57  = 0x0d00 + 79 = 3470
+
+        # 0.28 = 136 * x (x = 0.002)
+        if width > self.widths.get(c, 0):
+            # print "C: {0} = {1} ({2}) / {3}".format(c, label, str(label).__len__(), width)
+            self.widths[c] = width
+            self.sheet.col(c).width = width
+
+    def get_sheet(self):
+        return self.sheet
+
+    def __getattr__(self, attr):
+        return getattr(self.sheet, attr)
+
+
 class XLSWriter:
-    def __init__(self, **kwds):
-        self.wb = xlwt.Workbook(encoding='utf-8')
-        self.ws = self.wb.add_sheet("Sheet1")
+    def __init__(self, sheetname=None, **kwds):
+        self.head_style = None # Создаем новые стили
+        if not sheetname:
+            sheetname = "Sheet1"
+        sheetname = utf8_encode(sheetname)
+
+        self.book = xlwt.Workbook(encoding='utf-8')
+        self.sheet = FitSheetWrapper(self.book.add_sheet(sheetname))
+
+        # добавить новый цвет в палитре и установить RGB
+        xlwt.add_palette_colour("custom_colour", 0x21)
+        self.book.set_colour_RGB(0x21, 244, 236, 197) # FFF4ECC5 # border FFCCC085
+
+        # Создаем новые стили
+        # self.general_style = xlwt.easyxf('pattern: pattern solid, fore_colour custom_colour')
+        self.general_style = xlwt.XFStyle()
+        self.general_style.num_format_str = '@'
 
     def write_reader(self, reader):
         for rowi, row in enumerate(reader):
             if rowi == 0:
-                self._firsRow(row)
+                self._firs_row(row)
                 continue
             for coli, value in enumerate(row):
                 value = value.decode('utf-8')
-                self.ws.write(rowi, coli, value)
+                self.sheet.write(rowi, coli, value, self.general_style)
                 # print(value)
 
-    def _firsRow(self, row):
+    def _firs_row(self, row):
         for coli, value in enumerate(row):
             value = value.decode('utf-8')
-            self.ws.write(0, coli, value, self._get_style())
+            self.sheet.write(0, coli, value, self._get_style())
 
     def _get_style(self):
+        if self.head_style:
+            return self.head_style
+
         # Шрифт первой строчки
         fnt = xlwt.Font()
         fnt.name = 'Arial'
@@ -375,18 +451,24 @@ class XLSWriter:
 
         borders = xlwt.Borders()
         borders.right = 0x1
+        borders.right_colour = 0x13
 
-        style = xlwt.XFStyle()
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour custom_colour')
+        # style = xlwt.XFStyle()
         style.font = fnt
         style.borders = borders
 
-        return style
+        self.head_style = style
+        return self.head_style
 
     def save(self, filename):
-        filename = unicode_name(filename)
-        self.wb.save(filename)
+        try:
+            filename = unicode_name(filename)
+            self.book.save(filename)
+        except:
+            raise RuntimeError("Не удалось сохранить файл.")
 
     def frozen(self):
-        self.ws.panes_frozen = True
-        self.ws.horz_split_pos = 1
-
+        sheet = self.sheet.get_sheet()
+        sheet.panes_frozen = True
+        sheet.horz_split_pos = 1

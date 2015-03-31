@@ -4,8 +4,7 @@
 
 __author__ = 'Dmitriy Tyurin <fobia3d@gmail.com>'
 __license__ = "MIT"
-__version__ = '1.0'
-
+__version__ = '1.1'
 
 import sys
 import Table
@@ -15,6 +14,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 # ------------------------------
 
+
 def main():
     parser = ArgumentParser(description="преобразует в CSV")
 
@@ -22,7 +22,11 @@ def main():
     parser.add_argument('infile', type=str, help="входной-файл")
     parser.add_argument('outfile',  metavar='outfile', nargs='?', help="выходной-файл CSV")
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except:
+        # sys.exit(2)
+        return
     # ---------------------------
 
     infile = args.infile
@@ -34,4 +38,11 @@ if __name__ == "__main__":
     try:
         main()
     except BaseException as e:
-        sys.exit("Error: {0}".format(e))
+        print "Error: {0}".format(e)
+        sys.exit(1)
+        # sys.exit("Error: {0}".format(e))
+
+        # import errno, traceback
+        # traceback.print_exc(file=sys.stdout)
+        # sys.exit(errno.EACCES)
+
