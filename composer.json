@@ -1,7 +1,7 @@
 {
-    "name": "fobia/php-tablesheets",
+    "name": "fobia/php-tablesheet",
     "type": "library",
-    "description": "PHP Table Sheets",
+    "description": "PHP Table Sheet",
     "license": "MIT",
     "require": {
         "php": ">=5.3.0"

@@ -1,4 +1,4 @@
-# TableSheets
+# TableSheet
 
 Конвертор таблиц в стандартный CSV формат
 

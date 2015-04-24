@@ -4,7 +4,7 @@
 
 __author__ = 'Dmitriy Tyurin <fobia3d@gmail.com>'
 __license__ = "MIT"
-__version__ = '1.1'
+__version__ = '1.2'
 
 import sys
 import Table
@@ -21,6 +21,8 @@ def main():
     parser.add_argument('infile',  type=str, help="входной-файл CSV")
     parser.add_argument('outfile', type=str, help="выходной-файл XLS")
     parser.add_argument("-s", "--sheetname", dest="sheetname", default=None, help="имя сохраняемого листа")
+    parser.add_argument('-H', '--head', action="store_true", help="frozen head")
+    parser.add_argument('-c', '--color', dest="color", default=None, help="цвет шапки (F4ECC5)")
 
     try:
         args = parser.parse_args()
@@ -31,12 +33,23 @@ def main():
     infile = args.infile
     output = args.outfile
 
-    f = Table.utf8_open_file(infile)
-    reader = Table.CSVUnicodeReader(f)
+    infile = Table.unicode_filename(infile)
+    f = open(infile, 'rb')
 
+    reader = Table.CSVUnicodeReader(f)
     writer = Table.XLSWriter(args.sheetname)
+
+    if args.head:
+        if args.color:
+            writer.set_head(args.color)
+        else:
+            writer.set_head()
+
     writer.write_reader(reader)
-    writer.frozen()
+
+    if args.head:
+        writer.frozen()
+
     writer.save(output)
 
 if __name__ == "__main__":

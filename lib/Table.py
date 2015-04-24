@@ -1,10 +1,9 @@
-#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2015 Dmitriy Tyurin
 
 __author__ = 'Dmitriy Tyurin <fobia3d@gmail.com>'
 __license__ = "MIT"
-__version__ = '1.1'
+__version__ = '1.3'
 
 import chardet
 import codecs
@@ -19,6 +18,8 @@ import tempfile
 import types
 import xlrd
 import xlwt
+import HTMLParser
+from time import *
 
 # Кодировка по умолчанию
 # reload(sys)
@@ -26,7 +27,7 @@ import xlwt
 # ------------------------------
 
 
-def unicode_name(filename, encoding='utf-8'):
+def unicode_filename(filename, encoding='utf-8'):
     u"""
     Преобразует имя файла в правельный формат
     """
@@ -48,172 +49,43 @@ def utf8_encode(text, encoding='utf-8'):
             text = text.encode(encoding)
         except:
             pass
-    else:
-        pass
-
     return text
 # -----------------------------------------------
 
 
-def utf8_file_encode(filename, in_place=False):
-    u"""
-    Конвертирует файл в кодировку utf-8 и открывает копию 'wb'
+htmlCodes = (
+    (" ", "&nbsp;"),
+    ("'", '&#39;'),
+    ('"', '&quot;'),
+    ('>', '&gt;'),
+    ('<', '&lt;'),
+    ('&', '&amp;')
+)
+def html_decode(s):
+    """
+    Returns the ASCII decoded version of the given HTML string. This does
+    NOT remove normal HTML tags like <p>.
     """
 
-    filename = unicode_name(filename)
-
-    with open(filename, 'rb') as F:
-        t = F.read()
-        text = utf8_encode(t)
-        # text = text.replace('\r', '')
-        F.close()
-
-        if in_place:
-            W = open(filename, 'wb')
-        else:
-            W = tempfile.TemporaryFile()
-
-        W.write(text)
-        W.seek(0)
-        return W
-# -----------------------------------------------
-
-
-def utf8_open_file(filename):
-    u"""
-    Открывает файл для чтения в формате utf-8
-    """
-
-    filename = unicode_name(filename)
-    encoding='utf-8'
-
-    F = open(filename, 'rb')
-    text = F.read()
-    enc = chardet.detect(text).get("encoding")
-    if enc and enc.lower() != encoding:
-        try:
-            text = text.decode(enc)
-            text = text.encode(encoding)
-            F.close()
-            F = tempfile.TemporaryFile()
-            F.write(text)
-        except:
-            raise RuntimeError("Не удалось преобразовать кодировку")
-    F.seek(0)
-    return F
-# -----------------------------------------------
-
-
-def get_type_sheet(filename):
-    u"""
-    Тип таблици (CSV, XLS, XLSX)
-    """
-
-    filename = unicode_name(filename)
-    p = re.compile('html|plain|csv|xml|office|msword|excel|zip', re.IGNORECASE)
-
-    try:
-        proc = subprocess.Popen("/usr/bin/file --mime '%s'" % filename, shell=True, stdout=subprocess.PIPE)
-        out = proc.stdout.readlines()
-        S = " ".join(out).split(":")[1]
-        S = S.lower()
-
-        m = p.search(S).group()
-    except Exception, e:
-        return ''
-
-    if m == 'html':
-        t = 'HTML'
-    elif m == 'plain' or m == 'csv':
-        t = 'CSV'
-    elif m == 'xml' or m == 'msword' or m == 'office':
-        t = 'XLS'
-    elif m == 'zip' or m == 'excel':
-        t = 'XLSX'
-    else:
-        t = ''
-
-    return t
-# -----------------------------------------------
-
-
-def get_writer(filename=False, windows=False):
-    u"""
-    Создает объект класса CSVUnicodeWriter для записи
-    """
-
-    if type(filename) == str or type(filename) == unicode:
-        W = open(unicode_name(filename), 'wb')
-    elif type(filename) == file:
-        W = filename
-    elif filename == False:
-        W = tempfile.TemporaryFile()
-    else:
-        raise ValueError("Не верный аргумент файла записи")
-    # W = open('cp1251-utf8.csv', 'wb')
-
-    quoting = csv.QUOTE_MINIMAL
-    delimiter = ','
-    lineterminator = '\n'
-    encoding = 'utf-8'
-
-    if windows == True:
-        delimiter = ';'
-        # lineterminator = '\r\n'
-        # encoding = 'cp1251'
-
-    writer = CSVUnicodeWriter(W, delimiter=delimiter, encoding=encoding, quoting=quoting, lineterminator=lineterminator)
-    return writer
-# -----------------------------------------------
-
-
-def get_reader(filename, typesheet=None):
-    u"""
-    Создает правельный объект класса CSVUnicodeReader для чтения CSV.
-    При необходимост преобразует формат.
-    """
-
-    filename = unicode_name(filename)
-    if type(typesheet) == types.NoneType:
-        typesheet = get_type_sheet(filename)
-
-    if typesheet == 'CSV':
-        f = utf8_file_encode(filename)
-        reader = CSVUnicodeReader(f)
-    elif typesheet == 'XLS':
-        reader = XLSReader(filename)
-    elif typesheet == 'XLSX':
-        temp = tempfile.NamedTemporaryFile()
-        proc = subprocess.Popen("/usr/local/bin/xlsx2csv '%s' '%s'" % (filename, temp.name), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        err = proc.stderr.read()
-        if err:
-            try:
-                reader = XLSReader(filename)
-                return reader
-            except Exception, e:
-                pass
-
-            raise RuntimeError("Не удалось определить формат файла")
-        out = proc.stdout.read()
-
-        f = open(temp.name, 'rb')
-        reader = CSVUnicodeReader(f)
-    else:
-        raise RuntimeError("Не удалось определить формат файла")
-
-    return reader
+    for code in htmlCodes:
+        s = s.replace(code[1], code[0])
+    return s
 # -----------------------------------------------
 
 
 def detect_dialect(f):
     u"""
     Определить формат разделителей CSV
+    Input:
+        f - <type 'file'> дискриптор открытого файла
+    Output:
+        dialect
     """
 
     try:
         f.seek(0)
         dialect = csv.Sniffer().sniff(f.read(), delimiters=';,|\t')
-    except Exception, e:
+    except BaseException, e:
         f.seek(0)
         dialect=csv.excel
         dialect.lineterminator = '\n'
@@ -225,69 +97,137 @@ def detect_dialect(f):
 # -----------------------------------------------
 
 
-def parse_xlsx(filename, output, windows=False):
+def is_win():
+    if "win" in sys.platform.lower():
+        return True
+    else:
+        return False
+# -----------------------------------------------
+
+
+def get_type_sheet(filename):
     u"""
-    Конвертирует XLSX в формат CSV
+    Тип таблици (CSV, XLS, XLSX)
+
+    $ file --brief --mime test/data/file.csv
+        text/plain; charset=utf-8
+        text/plain; charset=iso-8859-1
+        text/plain; charset=us-ascii
     """
 
-    filename = unicode_name(filename)
-    delimiter = ','
+    filename = unicode_filename(filename)
+    p = re.compile('html|plain|csv|xml|office|msword|excel|zip', re.IGNORECASE)
+    c = re.compile('utf-8|us-ascii', re.IGNORECASE)
 
-    if windows:
-        delimiter = ';'
-
-    if output == sys.stdout:
-        proc = subprocess.Popen("/usr/local/bin/xlsx2csv -d '%s' '%s'" % (delimiter, filename), shell=True, stdout=sys.stdout, stderr=subprocess.PIPE)
-    else:
-        output = unicode_name(output)
-        proc = subprocess.Popen("/usr/local/bin/xlsx2csv -d '%s' '%s' '%s' " % (delimiter, filename, output), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    err = proc.stderr.read()
-    if err:
-        return False
-    # out = proc.stdout.read()
-
-    return True
-# -----------------------------------------------
-
-
-def convert_to_csv(filename, output, windows=False):
-    filename = unicode_name(filename)
-
-    if not os.path.isfile(filename) or not os.access(filename, os.R_OK):
-        raise RuntimeError("Либо файл отсутствует или не читается")
-
-    if parse_xlsx(filename, output, windows=windows):
-        return True
-
+    res = {
+        'type': '',
+        'utf8': True
+    }
     try:
-        reader = XLSReader(filename)
-    except:
-        try:
-            f = utf8_open_file(filename)
-            reader = CSVUnicodeReader(f)
-        except:
-            raise RuntimeError("Не удалось преобразовать в CSV")
+        if is_win():
+            cmd = 'file'
+        else:
+            cmd = '/usr/bin/file'
+        proc = subprocess.Popen("%s --mime '%s'" % (cmd, filename), shell=True, stdout=subprocess.PIPE)
+        out = proc.stdout.readlines()
+        S = " ".join(out).split(":")[1]
+        S = S.lower()
 
-    writer = get_writer(output, windows=windows)
-    writer.write_reader(reader)
-    return True
+        m = p.search(S).group()
+    except:
+        return res
+
+
+    if m == 'plain' or m == 'csv':
+        m = 'csv'
+    elif m == 'xml' or m == 'msword' or m == 'office':
+        m = 'xls'
+    elif m == 'zip' or m == 'excel':
+        m = 'xlsx'
+    elif not m:
+        m = ''
+
+    if m == 'csv' or m == 'html':
+        if not c.search(S):
+            res['utf8'] = False
+
+    res['type'] = m.lower()
+    return res
 # -----------------------------------------------
 
+
+def convert_xlsx(input_filename, output, delimiter=','):
+    import xlsx2csv
+    kwargs = {
+        'delimiter' : delimiter,
+        'sheetdelimiter' : '--------',
+        'dateformat' : '%%Y-%%m-%%d',
+        'skip_empty_lines' : False,
+        'escape_strings' : False,
+        'hyperlinks' : False,
+        'cmd' : False,
+        'include_sheet_pattern' : "^.*$",
+        'exclude_sheet_pattern' : "",
+        'merge_cells' : False
+    }
+    x = xlsx2csv.Xlsx2csv(input_filename, **kwargs)
+    # return x
+    # for s in self.workbook.sheets:
+    # print x.workbook.sheets
+    x.convert(output)
+# -----------------------------------------------
 
 class UTF8Recoder:
     u"""
     Итератор, который читает кодированный поток и перекодирует вход для UTF-8
     """
 
-    def __init__(self, f, encoding):
+    def __init__(self, f, encoding="utf-8"):
         self.reader = codecs.getreader(encoding)(f)
 
     def __iter__(self):
         return self
 
+    def read(self):
+        return self.reader.read().encode("utf-8")
+
     def next(self):
         return self.reader.next().encode("utf-8")
+# -----------------------------------------------
+
+
+class FitSheetWrapper(object):
+    """Try to fit columns to max size of any entry.
+    To use, wrap this around a worksheet returned from the
+    workbook's add_sheet method, like follows:
+
+        sheet = FitSheetWrapper(book.add_sheet(sheet_name))
+
+    The worksheet interface remains the same: this is a drop-in wrapper
+    for auto-sizing columns.
+    """
+    def __init__(self, sheet):
+        self.sheet = sheet
+        self.widths = dict()
+
+    def write(self, r, c, label='', *args, **kwargs):
+        self.sheet.write(r, c, label, *args, **kwargs)
+        slen = str(label).__len__()
+        if r > 0:
+            slen = slen + 3
+        if slen > 100:
+            slen = 100
+        width = slen * 200
+
+        if width > self.widths.get(c, 0):
+            self.widths[c] = width
+            self.sheet.col(c).width = width
+
+    def get_sheet(self):
+        return self.sheet
+
+    def __getattr__(self, attr):
+        return getattr(self.sheet, attr)
 # -----------------------------------------------
 
 
@@ -305,6 +245,66 @@ class CSVUnicodeReader:
     def next(self):
         row = self.reader.next()
         return [unicode(s, "utf-8") for s in row]
+
+    def __iter__(self):
+        return self
+# -----------------------------------------------
+
+
+class XLSReader:
+    def __init__(self, filename, **kwds):
+        filename = unicode_filename(filename)
+        book = xlrd.open_workbook(filename)
+        self.sh = book.sheet_by_index(0)
+        self.reader = self.get_reader()
+
+    def get_reader(self):
+        for rx in xrange(self.sh.nrows):
+            row = []
+            for cell in self.sh.row(rx):
+                data = str(cell.value)
+                row.append(data)
+            yield row
+
+    def next(self):
+        row = self.reader.next()
+        return [unicode(s, "utf-8") for s in row]
+
+    def __iter__(self):
+        return self
+# -----------------------------------------------
+
+
+class HTMLReader:
+    u"""
+    HTML Reader
+    """
+
+    def __init__(self, f, encoding="utf-8", **kwds):
+        text = f.read().encode("utf-8")
+        text = re.compile('<(\w+)([^">]*(="[^"]*")?)*>', re.DOTALL).sub(r'<\1>', text)
+        text = re.compile('\s+', re.DOTALL).sub(' ', text)
+        text = re.compile('\r|( *<(?!/?(td|tr|th)>).+?> *)', re.DOTALL).sub('', text)
+
+        ptr = re.compile('<tr>.*?</tr>', re.DOTALL)
+        ptd = re.compile('<td>(.*?)</td>', re.DOTALL)
+
+        rows = list()
+        mtr = ptr.findall(text)
+        for tr in mtr:
+            row = ptd.findall(tr)
+            if len(row):
+                rows.append(row)
+
+        self.reader = enumerate(rows)
+
+    def parser(self, text):
+        text = html_decode(unicode(text, "utf-8")).strip(' ')
+        return text
+
+    def next(self):
+        idx, row = self.reader.next()
+        return [self.parser(s) for s in row]
 
     def __iter__(self):
         return self
@@ -347,68 +347,8 @@ class CSVUnicodeWriter:
 # -----------------------------------------------
 
 
-class XLSReader:
-    def __init__(self, f, **kwds):
-        f = unicode_name(f)
-        book = xlrd.open_workbook(f)
-        self.sh = book.sheet_by_index(0)
-        self.reader = self.get_reader()
-
-    def get_reader(self):
-        for rx in xrange(self.sh.nrows):
-            row = []
-            for cell in self.sh.row(rx):
-                data = str(cell.value)
-                row.append(data)
-            yield row
-
-    def next(self):
-        row = self.reader.next()
-        return [unicode(s, "utf-8") for s in row]
-
-    def __iter__(self):
-        return self
-# -----------------------------------------------
-
-
-class FitSheetWrapper(object):
-    """Try to fit columns to max size of any entry.
-    To use, wrap this around a worksheet returned from the
-    workbook's add_sheet method, like follows:
-
-        sheet = FitSheetWrapper(book.add_sheet(sheet_name))
-
-    The worksheet interface remains the same: this is a drop-in wrapper
-    for auto-sizing columns.
-    """
-    def __init__(self, sheet):
-        self.sheet = sheet
-        self.widths = dict()
-
-    def write(self, r, c, label='', *args, **kwargs):
-        self.sheet.write(r, c, label, *args, **kwargs)
-        # width = str(label).__len__() / 0.02
-        width = (str(label).__len__() + 1) * 200
-
-        # 12.29 = 0x0d00 + 6 = 3334
-        # 12.57  = 0x0d00 + 79 = 3470
-
-        # 0.28 = 136 * x (x = 0.002)
-        if width > self.widths.get(c, 0):
-            # print "C: {0} = {1} ({2}) / {3}".format(c, label, str(label).__len__(), width)
-            self.widths[c] = width
-            self.sheet.col(c).width = width
-
-    def get_sheet(self):
-        return self.sheet
-
-    def __getattr__(self, attr):
-        return getattr(self.sheet, attr)
-
-
 class XLSWriter:
     def __init__(self, sheetname=None, **kwds):
-        self.head_style = None # Создаем новые стили
         if not sheetname:
             sheetname = "Sheet1"
         sheetname = utf8_encode(sheetname)
@@ -422,8 +362,29 @@ class XLSWriter:
 
         # Создаем новые стили
         # self.general_style = xlwt.easyxf('pattern: pattern solid, fore_colour custom_colour')
+
+        # По умолчанию
         self.general_style = xlwt.XFStyle()
-        self.general_style.num_format_str = '@'
+        self.general_style.num_format_str = 'general'
+        # self.general_style.alignment.wrap = 1
+
+        alignment = xlwt.Alignment() # Create Alignment
+        alignment.horz = xlwt.Alignment.HORZ_LEFT
+        alignment.vert = xlwt.Alignment.VERT_TOP
+        alignment.wrap = 1
+        self.general_style.alignment = alignment
+
+        # Стиль шапки
+        self.head_style = self.general_style
+
+    def set_head(self, hex='#F4ECC5'):
+        value = hex.lstrip('#')
+        lv = len(value)
+        rgb = tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+        self.book.set_colour_RGB(0x21, rgb[0], rgb[1], rgb[2])
+
+        # Обнулим стиль
+        self.head_style = self._get_style(True)
 
     def write_reader(self, reader):
         for rowi, row in enumerate(reader):
@@ -440,8 +401,8 @@ class XLSWriter:
             value = value.decode('utf-8')
             self.sheet.write(0, coli, value, self._get_style())
 
-    def _get_style(self):
-        if self.head_style:
+    def _get_style(self, reset = False):
+        if self.head_style and not reset:
             return self.head_style
 
         # Шрифт первой строчки
@@ -463,7 +424,7 @@ class XLSWriter:
 
     def save(self, filename):
         try:
-            filename = unicode_name(filename)
+            filename = unicode_filename(filename)
             self.book.save(filename)
         except:
             raise RuntimeError("Не удалось сохранить файл.")
@@ -472,3 +433,50 @@ class XLSWriter:
         sheet = self.sheet.get_sheet()
         sheet.panes_frozen = True
         sheet.horz_split_pos = 1
+# -----------------------------------------------
+
+
+class ConvertCSV:
+    def __init__(self, filename):
+        self.filename = unicode_filename(filename)
+        self.tp = get_type_sheet(filename)
+
+    def convert(self, output, delimiter=','):
+        t = self.tp['type']
+        if not t:
+            raise ValueError("Не верный формат файла таблицы")
+
+        if t == 'xlsx':
+            try:
+                convert_xlsx(self.filename, output, delimiter=delimiter)
+                return
+            except:
+                t = 'xls'
+        if t == 'xls':
+            reader = XLSReader(self.filename)
+        else:
+            F=open(self.filename, 'rb')
+            if not self.tp['utf8']:
+                W = tempfile.TemporaryFile()
+                W.write(utf8_encode(F.read()))
+                F.close()
+                F = W
+                F.seek(0)
+            if t == 'csv':
+                reader = CSVUnicodeReader(F)
+            elif t == 'html':
+                reader = HTMLReader(F)
+
+        if type(output) == str or type(output) == unicode:
+            output = open(unicode_filename(output), 'wb')
+        elif type(output) == file:
+            pass
+        else:
+            raise ValueError("Не верный аргумент файла записи")
+
+        writer = self._get_writer(output, delimiter=delimiter)
+        writer.write_reader(reader)
+
+    def _get_writer(self, output, delimiter=','):
+        return CSVUnicodeWriter(output, delimiter=delimiter, encoding='utf-8', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+# -----------------------------------------------

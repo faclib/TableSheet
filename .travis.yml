@@ -7,7 +7,7 @@ php:
 
 install:
   - sudo apt-get install python python-pip
-  - sudo pip install chardet chardet2 xlrd xlsx2csv xlwt
+  - sudo pip install --requirement=requirements.txt
   - composer install --prefer-dist --dev
 
 script: phpunit
