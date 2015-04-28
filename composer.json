@@ -12,5 +12,8 @@
     "autoload": {
         "psr-0": { "Fobia\\": "src/" }
     },
+    "suggest": {
+        "phpoffice/phpexcel": "install for php"
+    },
     "minimum-stability": "dev"
 }
