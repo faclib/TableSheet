@@ -377,8 +377,18 @@ class XLSWriter:
         # Стиль шапки
         self.head_style = self.general_style
 
+
     def set_head(self, hex='#F4ECC5'):
-        value = hex.lstrip('#')
+        _color = {
+            'yellow': 'F4ECC5',
+            'red':    'FFC7CE',
+            'blue':   'C5D9F1'
+        }
+        if hex in _color.keys():
+            value = _color[hex]
+        else:
+            value = hex.lstrip('#')
+
         lv = len(value)
         rgb = tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
         self.book.set_colour_RGB(0x21, rgb[0], rgb[1], rgb[2])
