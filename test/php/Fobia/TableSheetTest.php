@@ -47,8 +47,8 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
 
     public function testGetProgn()
     {
-        $p = sprintf("@^/usr/bin/python .*?%s$@", TableSheet::CMD_TO_CSV);
-        $r = (bool) preg_match($p, TableSheet2::getProg(TableSheet::CMD_TO_CSV));
+        $p = sprintf("@^/usr/bin/python .*?%s csv$@", TableSheet::CMD_EXEC_FILE);
+        $r = (bool) preg_match($p, TableSheet2::getProg('csv'));
         $this->assertEquals(true, $r);
     }
 

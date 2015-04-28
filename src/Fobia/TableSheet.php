@@ -16,8 +16,7 @@ namespace Fobia;
  */
 class TableSheet
 {
-    const CMD_TO_CSV = 'to-csv.py';
-    const CMD_TO_XLS = 'to-xls.py';
+    const CMD_EXEC_FILE = 'convert-table.py';
 
     /**
      * Определяет формат таблицы
@@ -66,11 +65,12 @@ class TableSheet
      * @param string $outfile
      * @return boolean
      */
-    public static function toCSV($pFilename, $outfile)
+    public static function toCSV($pFilename, $outfile, $delimiter = ',')
     {
-        $cmd = sprintf("%s '%s' '%s'",
-            self::getProg(self::CMD_TO_CSV),
-            $pFilename, $outfile);
+        $cmd = sprintf("%s --delimiter '%s' '%s' '%s'",
+            self::getProg('csv'),
+            $delimiter, $pFilename, $outfile);
+        
         $res = shell_exec($cmd);
         if (!preg_match('/error:/i', $res)) {
             return true;
@@ -87,10 +87,10 @@ class TableSheet
      * @param string $csvFile     входной CSV файл правельного формата
      * @param string $outputFile  сохраняемый файл
      * @param string $sheetname   название листа
-     * @param string $head_color  установить шапку в цвете (#F4ECC5)
+     * @param string $head_color  установить шапку в цвете (#F4ECC5) [red, yellow, blue]
      * @return boolean
      */
-    public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1", $head_color = null)
+    public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1", $head_color = null, $forse = false)
     {
         $head = '';
         if ($head_color) {
@@ -99,9 +99,10 @@ class TableSheet
                 $head .= "--color '{$head_color}'";
             }
         }
-        $cmd = sprintf("%s %s --sheetname '%s' '%s' '%s'",
-            self::getProg(self::CMD_TO_XLS),
-            $head,
+        $cmd = sprintf("%s %s %s --sheetname '%s' '%s' '%s'",
+            self::getProg('xls'),
+            $head, 
+            (($forse) ? '--forse' : ''),
             $sheetname,
             $csvFile, $outputFile);
         $res = shell_exec($cmd);
@@ -125,13 +126,13 @@ class TableSheet
      */
     protected static function getProg($prog)
     {
-        $cmd = dirname(dirname(dirname(__FILE__))) . '/lib/' . $prog;
+        $cmd = dirname(dirname(dirname(__FILE__))) . '/lib/' . self::CMD_EXEC_FILE;
         if (!file_exists($cmd)) {
             throw new \RuntimeException("Не найден файл исполняемого скрипта '{$cmd}'");
         }
 
         // return sprintf("%s %s", (!self::isWin()) ? "/usr/bin/python" : "python", $cmd);
-        return "/usr/bin/python " . $cmd;
+        return "/usr/bin/python " . $cmd . ' ' . $prog;
     }
 
     /**
