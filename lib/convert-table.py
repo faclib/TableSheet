@@ -2,6 +2,10 @@
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2015 Dmitriy Tyurin
 
+__author__ = 'Dmitriy Tyurin <fobia3d@gmail.com>'
+__license__ = "MIT"
+__version__ = '1.4'
+
 import sys
 import Table
 from argparse import ArgumentParser
@@ -36,6 +40,8 @@ group_xls.add_argument('--head', action="store_true", help="frozen head")
 group_xls.add_argument('-c', '--color', dest="color", default=None, help="цвет шапки (F4ECC5)")
 
 # parser.print_help()
+
+
 def cmd_xls(args):
 
     if args.forse:
@@ -66,6 +72,7 @@ def cmd_csv(args):
     convertCsv.convert(args.outfile, args.delimiter)
 # ------------------------------------------------
 
+
 def main():
     if not len(sys.argv) or '-h' in sys.argv or '--help' in sys.argv:
         parser.print_help()
@@ -80,8 +87,8 @@ def main():
         cmd_csv(args)
     else:
         cmd_xls(args)
+# ------------------------------------------------
 
-# ---------------------------
 
 if __name__ == "__main__":
     try:
