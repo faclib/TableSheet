@@ -76,7 +76,7 @@ class TableSheet
         if (!preg_match('/error:/i', $res)) {
             return true;
         } else {
-            trigger_error('Не удалось конфертировать в CSV. ' . $res, E_WARNING);
+            trigger_error('Не удалось конфертировать в CSV. ' . $res, E_USER_WARNING);
         }
 
         return false;
@@ -97,7 +97,7 @@ class TableSheet
         $head = '';
         if ($head_color) {
             $head = "--head ";
-            if (substr($head_color, 0, 1) == '#') {
+            if (substr($head_color, 0, 1) == '#' || in_array($head_color, array('yellow', 'red', 'blue'))) {
                 $head .= "--color '{$head_color}'";
             }
         }
@@ -112,7 +112,7 @@ class TableSheet
         if (!preg_match('/error:/i', $res)) {
             return true;
         } else {
-            trigger_error('Не удалось конфертировать в XLS. ' . $res, E_WARNING);
+            trigger_error('Не удалось конфертировать в XLS. ' . $res, E_USER_WARNING);
             return false;
         }
     }
