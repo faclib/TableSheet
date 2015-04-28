@@ -63,6 +63,7 @@ class TableSheet
      *
      * @param string $pFilename
      * @param string $outfile
+     * @param string $delimiter  разделитель столбцов
      * @return boolean
      */
     public static function toCSV($pFilename, $outfile, $delimiter = ',')
@@ -70,7 +71,7 @@ class TableSheet
         $cmd = sprintf("%s --delimiter '%s' '%s' '%s'",
             self::getProg('csv'),
             $delimiter, $pFilename, $outfile);
-        
+
         $res = shell_exec($cmd);
         if (!preg_match('/error:/i', $res)) {
             return true;
@@ -88,6 +89,7 @@ class TableSheet
      * @param string $outputFile  сохраняемый файл
      * @param string $sheetname   название листа
      * @param string $head_color  установить шапку в цвете (#F4ECC5) [red, yellow, blue]
+     * @param string $forse       попытаться предворительно преобразовать фармат файла
      * @return boolean
      */
     public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1", $head_color = null, $forse = false)
@@ -101,7 +103,7 @@ class TableSheet
         }
         $cmd = sprintf("%s %s %s --sheetname '%s' '%s' '%s'",
             self::getProg('xls'),
-            $head, 
+            $head,
             (($forse) ? '--forse' : ''),
             $sheetname,
             $csvFile, $outputFile);
@@ -120,11 +122,11 @@ class TableSheet
      * Возвращает команду для выполнения
      *    python prog
      *
-     * @param string $prog
+     * @param string $command  команда (xls, csv)
      * @return string
      * @throws \RuntimeException
      */
-    protected static function getProg($prog)
+    protected static function getProg($command)
     {
         $cmd = dirname(dirname(dirname(__FILE__))) . '/lib/' . self::CMD_EXEC_FILE;
         if (!file_exists($cmd)) {
@@ -132,7 +134,7 @@ class TableSheet
         }
 
         // return sprintf("%s %s", (!self::isWin()) ? "/usr/bin/python" : "python", $cmd);
-        return "/usr/bin/python " . $cmd . ' ' . $prog;
+        return "/usr/bin/python " . $cmd . ' ' . $command;
     }
 
     /**
