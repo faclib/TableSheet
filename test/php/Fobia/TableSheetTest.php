@@ -59,7 +59,7 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
     {
         $f = DATA_DIR . '/' . $file;
         $this->assertEquals(true, TableSheet::toCSV($f, TMP_CSV));
-        
+
 //        echo file_get_contents(TMP_CSV);
 
         $this->assertEquals($this->head, $this->getHead());
@@ -74,7 +74,7 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
             array('excel2007.xlsx'),
             array('fake.xlsx'),
             array('fixed.csv'),
-            array('long.xlsx'),
+            // array('long.xlsx'),
             array('table.html'),
         );
     }
