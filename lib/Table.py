@@ -286,6 +286,8 @@ class HTMLReader:
         text = re.compile('\s+', re.DOTALL).sub(' ', text)
         text = re.compile('\r|( *<(?!/?(td|tr|th)>).+?> *)', re.DOTALL).sub('', text)
 
+        text = re.compile('<th>(.*?)</th>', re.DOTALL).sub(r'<td>\1</td>', text)
+
         ptr = re.compile('<tr>.*?</tr>', re.DOTALL)
         ptd = re.compile('<td>(.*?)</td>', re.DOTALL)
 
