@@ -42,14 +42,9 @@ Fobia\TableSheet::toCSV($pFilename, $outfile, $delimiter = ',')
 
 **Parameters:**
 
-> - `pFilename`   *string*
-> Имя читаемого файла.
-
-> - `outfile`   *string*
-> Путь к записываемому файлу.
-
-> - `delimiter`   *String (optional, default: `,`)*
-> разделитель
+> - `pFilename`   *String*  Имя читаемого файла.
+> - `outfile`     *String*    Путь к записываемому файлу.
+> - `delimiter`   *String (optional, default: `,`)* разделитель
 
 
 
@@ -63,21 +58,11 @@ Fobia\TableSheet::toXLS($csvFile, $outputFile, $sheetname, $head_color, $forse)
 
 **Parameters:**
 
-> - `csvFile`   *string*
-> Имя читаемого файла.
-
-> - `outputFile`   *string*
-> Путь к записываемому файлу.
-
-> - `sheetname`   *String (optional, default: `Sheet1`)*
-> Название листа
-
-> - `head_color`   *String (optional, default: `null`)*
-> Установить шапку в цвет (#F4ECC5) [red, yellow, blue]
-
-> - `forse`   *String (optional, default: `false`)*
-> Попытаться предварительно преобразовать формат файла
-
+> - `csvFile`      *String*   Имя читаемого файла.
+> - `outputFile`   *String*   Путь к записываемому файлу.
+> - `sheetname`    *String (optional, default: `Sheet1`)*  Название листа.
+> - `head_color`   *String (optional, default: `null`)*    Установить шапку в цвет (#F4ECC5) [red, yellow, blue]
+> - `forse`        *String (optional, default: `false`)*   Попытаться предварительно преобразовать формат файла
 
 
 
@@ -85,25 +70,29 @@ Fobia\TableSheet::toXLS($csvFile, $outputFile, $sheetname, $head_color, $forse)
 
 Синтаксис 
 
-    $ python convert-table.py <command> [options] <infile> <outfile>
+```
+$ python convert-table.py <command> [options] <infile> <outfile>
+```
 
 , где:
 
-- {xls,csv}             команда
-- infile                входной-файл
-- outfile               выходной-файл (CSV, XLS)
+> - `command`  *String (`csv`, `xls`)*  команда.
+> - `infile`   *String*    входной-файл
+> - `outfile`  *String*    выходной-файл (CSV, XLS)
 
 
 **csv** -  конвертация в CSV
 
-- ```--delimiter <D>``` - delimiter columns delimiter in csv (default: ',')
+> - `--delimiter <D>` *String (optional, default: `,`)* 
+> delimiter columns delimiter in csv (default: ',')
+
 
 **xls** - конвертация в XLS
 
-- ```--forse```          - предварительно преобразовать в csv
-- ```--sheetname <S>```  - имя сохраняемого листа
-- ```--head```           - заморозить шапку
-- ```--color <C>```      - цвет фона шапки
+> - `--forse`     предварительно преобразовать в csv
+> - `--sheetname <S>` *String (optional, default: `Sheet1`)*   имя сохраняемого листа
+> - `--head`             заморозить шапку
+> - `--color <C>` *String (optional)*   цвет фона шапки
 
 
 
