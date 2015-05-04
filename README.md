@@ -1,5 +1,9 @@
 # TableSheet
 
+
+[![Build Status](https://travis-ci.org/faclib/TableSheet.svg?branch=master)](https://travis-ci.org/faclib/TableSheet)
+
+
 Конвертор таблиц в стандартный CSV формат
 
 
@@ -28,8 +32,52 @@ Installation
 ## Usage 
 
 
-    Fobia\TableSheet::toCSV('input.xls', 'out.csv');
-    Fobia\TableSheet::toXLS('input.csv', 'out.xls');
+
+### `toCSV()`
+
+
+```php
+Fobia\TableSheet::toCSV($pFilename, $outfile, $delimiter = ',')
+```
+
+**Parameters:**
+
+> - `pFilename`   *string*
+> Имя читаемого файла.
+
+> - `outfile`   *string*
+> Путь к записываемому файлу.
+
+> - `delimiter`   *String (optional, default: `,`)*
+> разделитель
+
+
+
+
+### `toXLS()`
+
+
+```php
+Fobia\TableSheet::toXLS($csvFile, $outputFile, $sheetname, $head_color, $forse)
+```
+
+**Parameters:**
+
+> - `csvFile`   *string*
+> Имя читаемого файла.
+
+> - `outputFile`   *string*
+> Путь к записываемому файлу.
+
+> - `sheetname`   *String (optional, default: `Sheet1`)*
+> Название листа
+
+> - `head_color`   *String (optional, default: `null`)*
+> Установить шапку в цвет (#F4ECC5) [red, yellow, blue]
+
+> - `forse`   *String (optional, default: `false`)*
+> Попытаться предварительно преобразовать формат файла
+
 
 
 

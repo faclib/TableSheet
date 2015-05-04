@@ -89,7 +89,7 @@ class TableSheet
      * @param string $outputFile  сохраняемый файл
      * @param string $sheetname   название листа
      * @param string $head_color  установить шапку в цвете (#F4ECC5) [red, yellow, blue]
-     * @param string $forse       попытаться предворительно преобразовать фармат файла
+     * @param string $forse       попытаться предварительно преобразовать формат файла
      * @return boolean
      */
     public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1", $head_color = null, $forse = false)
