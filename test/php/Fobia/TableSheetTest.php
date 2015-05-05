@@ -68,8 +68,8 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
     public function filesProvider()
     {
         return array(
-            // array('файл.csv'),
-            // array('cp1251.csv'),
+            array('файл.csv'),
+            array('cp1251.csv'),
             array('excel2003.xls'),
             array('excel2007.xlsx'),
             array('fake.xlsx'),
@@ -79,7 +79,7 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    /*
+
     public function testToCsvOneRus()
     {
         $f = DATA_DIR . '/файл.csv';
