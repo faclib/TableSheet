@@ -43,13 +43,14 @@ class TableSheet
 
         // $type = pathinfo($pFilename, PATHINFO_EXTENSION);
 
-        if (preg_match('/html|plain|csv|xml|office|msword|excel|zip/', $type, $m)) {
+        if (preg_match('/html|plain|csv|xml|office|msword|document|excel|zip/', $type, $m)) {
             switch ($m[0]) {
                 case 'html':      return 'HTML';
                 case 'plain':
                 case 'csv':       return 'CSV';
                 case 'xml':       return 'Excel2003XML';
                 case 'msword':
+                case 'document':
                 case 'office':    return 'Excel5';
                 case 'zip':
                 case 'excel':  return 'Excel2007';

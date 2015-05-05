@@ -116,7 +116,7 @@ def get_type_sheet(filename):
     """
 
     filename = unicode_filename(filename)
-    p = re.compile('html|plain|csv|xml|office|msword|excel|zip', re.IGNORECASE)
+    p = re.compile('html|plain|csv|xml|office|document|msword|excel|zip', re.IGNORECASE)
     c = re.compile('utf-8|us-ascii', re.IGNORECASE)
 
     res = {
@@ -140,7 +140,7 @@ def get_type_sheet(filename):
 
     if m == 'plain' or m == 'csv':
         m = 'csv'
-    elif m == 'xml' or m == 'msword' or m == 'office':
+    elif m == 'xml' or m == 'msword' or m == 'office' or m == 'document':
         m = 'xls'
     elif m == 'zip' or m == 'excel':
         m = 'xlsx'
