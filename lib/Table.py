@@ -455,8 +455,6 @@ class ConvertCSV:
 
     def convert(self, output, delimiter=','):
         t = self.tp['type']
-        if not t:
-            raise ValueError("Не верный формат файла таблицы")
 
         if t == 'xlsx':
             try:
@@ -464,8 +462,12 @@ class ConvertCSV:
                 return
             except:
                 t = 'xls'
-        if t == 'xls':
-            reader = XLSReader(self.filename)
+
+        if t == 'xls' or not t:
+            try:
+                reader = XLSReader(self.filename)
+            except:
+                raise ValueError("Не верный формат файла таблицы")
         else:
             F=open(self.filename, 'rb')
             if not self.tp['utf8']:
