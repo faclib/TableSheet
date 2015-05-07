@@ -54,7 +54,7 @@ Fobia\TableSheet::toCSV($pFilename, $outfile, $options)
 
 
 ```php
-Fobia\TableSheet::toXLS($csvFile, $outputFile, $options)
+Fobia\TableSheet::toXLS($csvFile, $output, $options)
 ```
 
 **Parameters:**
