@@ -37,14 +37,15 @@ Installation
 
 
 ```php
-Fobia\TableSheet::toCSV($pFilename, $outfile, $delimiter = ',')
+Fobia\TableSheet::toCSV($pFilename, $outfile, $options)
 ```
 
 **Parameters:**
 
 > - `pFilename`   *String*  Имя читаемого файла.
 > - `outfile`     *String*    Путь к записываемому файлу.
-> - `delimiter`   *String (optional, default: `,`)* разделитель
+> - `options`     *Array*    Параметры.
+> - - `delimiter`   *String (optional, default: `,`)* разделитель
 
 
 
@@ -53,16 +54,17 @@ Fobia\TableSheet::toCSV($pFilename, $outfile, $delimiter = ',')
 
 
 ```php
-Fobia\TableSheet::toXLS($csvFile, $outputFile, $sheetname, $head_color, $forse)
+Fobia\TableSheet::toXLS($csvFile, $outputFile, $options)
 ```
 
 **Parameters:**
 
 > - `csvFile`      *String*   Имя читаемого файла.
-> - `outputFile`   *String*   Путь к записываемому файлу.
-> - `sheetname`    *String (optional, default: `Sheet1`)*  Название листа.
-> - `head_color`   *String (optional, default: `null`)*    Установить шапку в цвет (#F4ECC5) [red, yellow, blue]
-> - `forse`        *String (optional, default: `false`)*   Попытаться предварительно преобразовать формат файла
+> - `output`       *String*   Путь к записываемому файлу.
+> - `options`      *Array*    Параметры.
+> - - `sheetname`    *String (optional, default: `Sheet1`)*  Название листа.
+> - - `head_color`   *String (optional, default: `null`)*    Установить шапку в цвет (#F4ECC5) [red, yellow, blue]
+> - - `forse`        *String (optional, default: `false`)*   Попытаться предварительно преобразовать формат файла
 
 
 
