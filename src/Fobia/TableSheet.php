@@ -19,6 +19,86 @@ class TableSheet
     const CMD_EXEC_FILE = 'convert-table.py';
 
     /**
+     * Конвертирует в фиксированый CSV формат
+     *
+     * @param string $pFilename
+     * @param string $outfile
+     * @param array  $options    параметры
+     *                  - delimiter  -  разделитель столбцов
+     * @return boolean
+     */
+    public static function toCSV($pFilename, $outfile, array $options = array())
+    {
+        $options = array_merge(array(
+             'delimiter' => ','
+        ), $options);
+
+        $cmd = sprintf("%s --delimiter '%s' '%s' '%s'",
+            self::getProg('csv'),
+            $options['delimiter'],
+            $pFilename,
+            $outfile
+        );
+
+        $res = shell_exec($cmd);
+        if (!preg_match('/error:/i', $res)) {
+            return true;
+        } else {
+            trigger_error('Не удалось конфертировать в CSV. ' . $res, E_USER_WARNING);
+        }
+
+        return false;
+    }
+
+    /**
+     * Конвертирует CSV в XML с помощью python утилит
+     *
+     * @param string $csvFile     входной CSV файл правельного формата
+     * @param string $output      сохраняемый файл
+     * @param array  $options    параметры
+     *                  - sheetname   название листа
+     *                  - head_color  установить шапку в цвете (#F4ECC5) [red, yellow, blue]
+     *                  - forse       попытаться предварительно преобразовать формат файла
+     *
+     * @return boolean
+     */
+    public static function toXls($csvFile, $output, array $options = array())
+    {
+        $options = array_merge(array(
+             'sheetname' => 'Sheet1',
+             'head_color' => null,
+             'forse' => false,
+        ), $options);
+        extract($options);
+
+        // проверка параметров
+        $head = '';
+        if ($head_color) {
+            $head = "--head ";
+            if (substr($head_color, 0, 1) == '#' || in_array($head_color, array('yellow', 'red', 'blue'))) {
+                $head .= "--color '{$head_color}'";
+            }
+        }
+
+        $cmd = sprintf("%s %s %s --sheetname '%s' '%s' '%s'",
+            self::getProg('xls'),
+                $head,
+                (($forse) ? '--forse' : ''),
+                $sheetname,
+            $csvFile, $output);
+        $res = shell_exec($cmd);
+
+        if (!preg_match('/error:/i', $res)) {
+            return true;
+        } else {
+            trigger_error('Не удалось конфертировать в XLS. ' . $res, E_USER_WARNING);
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
      * Определяет формат таблицы
      *      - Excel2007
      *      - Excel5
@@ -31,6 +111,8 @@ class TableSheet
      *
      * @param string $pFilename
      * @return string|FALSE Формат файла
+     *
+     * @deprecated
      */
     public static function identifyType($pFilename)
     {
@@ -59,65 +141,7 @@ class TableSheet
         return false;
     }
 
-    /**
-     * Конвертирует в фиксированый CSV формат
-     *
-     * @param string $pFilename
-     * @param string $outfile
-     * @param string $delimiter  разделитель столбцов
-     * @return boolean
-     */
-    public static function toCSV($pFilename, $outfile, $delimiter = ',')
-    {
-        $cmd = sprintf("%s --delimiter '%s' '%s' '%s'",
-            self::getProg('csv'),
-            $delimiter, $pFilename, $outfile);
-
-        $res = shell_exec($cmd);
-        if (!preg_match('/error:/i', $res)) {
-            return true;
-        } else {
-            trigger_error('Не удалось конфертировать в CSV. ' . $res, E_USER_WARNING);
-        }
-
-        return false;
-    }
-
-    /**
-     * Конвертирует CSV в XML с помощью python утилит
-     *
-     * @param string $csvFile     входной CSV файл правельного формата
-     * @param string $outputFile  сохраняемый файл
-     * @param string $sheetname   название листа
-     * @param string $head_color  установить шапку в цвете (#F4ECC5) [red, yellow, blue]
-     * @param string $forse       попытаться предварительно преобразовать формат файла
-     * @return boolean
-     */
-    public static function toXls($csvFile, $outputFile, $sheetname = "Sheet1", $head_color = null, $forse = false)
-    {
-        $head = '';
-        if ($head_color) {
-            $head = "--head ";
-            if (substr($head_color, 0, 1) == '#' || in_array($head_color, array('yellow', 'red', 'blue'))) {
-                $head .= "--color '{$head_color}'";
-            }
-        }
-        $cmd = sprintf("%s %s %s --sheetname '%s' '%s' '%s'",
-            self::getProg('xls'),
-            $head,
-            (($forse) ? '--forse' : ''),
-            $sheetname,
-            $csvFile, $outputFile);
-        $res = shell_exec($cmd);
-
-        if (!preg_match('/error:/i', $res)) {
-            return true;
-        } else {
-            trigger_error('Не удалось конфертировать в XLS. ' . $res, E_USER_WARNING);
-            return false;
-        }
-    }
-
+    // ------------------------------------------------------------------------
 
     /**
      * Возвращает команду для выполнения
@@ -129,9 +153,12 @@ class TableSheet
      */
     protected static function getProg($command)
     {
-        $cmd = dirname(dirname(dirname(__FILE__))) . '/lib/' . self::CMD_EXEC_FILE;
-        if (!file_exists($cmd)) {
-            throw new \RuntimeException("Не найден файл исполняемого скрипта '{$cmd}'");
+        static $cmd = null;
+        if ($cmd === null) {
+            $cmd = dirname(dirname(dirname(__FILE__))) . '/lib/' . self::CMD_EXEC_FILE;
+            if (!file_exists($cmd)) {
+                throw new \RuntimeException("Не найден файл исполняемого скрипта '{$cmd}'");
+            }
         }
 
         // return sprintf("%s %s", (!self::isWin()) ? "/usr/bin/python" : "python", $cmd);

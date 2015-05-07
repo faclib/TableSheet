@@ -106,14 +106,14 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
 
     public function testToXlsSheetname()
     {
-        $this->assertEquals(true, TableSheet::toXls(FIXED_CSV, TMP_XLS, "Sheet2"));
+        $this->assertEquals(true, TableSheet::toXls(FIXED_CSV, TMP_XLS, array( "sheetname" => "Sheet2")));
         $this->assertEquals(true, TableSheet::toCSV(TMP_XLS, TMP_CSV));
         $this->assertEquals($this->head, $this->getHead());
     }
 
     public function testToXlsColor()
     {
-        $this->assertEquals(true, TableSheet::toXls(FIXED_CSV, TMP_XLS, "Sheet2", 'yellow'));
+        $this->assertEquals(true, TableSheet::toXls(FIXED_CSV, TMP_XLS, array( "head_color" => 'yellow')));
         $this->assertEquals(true, TableSheet::toCSV(TMP_XLS, TMP_CSV));
         $this->assertEquals($this->head, $this->getHead());
     }
@@ -121,7 +121,7 @@ class TableSheetTest extends \PHPUnit_Framework_TestCase
     public function testToXlsForse()
     {
         $f = dirname(FIXED_CSV) . '/fake.xlsx';
-        $this->assertEquals(true, TableSheet::toXls($f, TMP_XLS, "Sheet2", 'yellow', true));
+        $this->assertEquals(true, TableSheet::toXls($f, TMP_XLS, array( "forse" => true)));
         $this->assertEquals(true, TableSheet::toCSV(TMP_XLS, TMP_CSV));
         $this->assertEquals($this->head, $this->getHead());
     }
