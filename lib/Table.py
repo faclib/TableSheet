@@ -58,8 +58,8 @@ htmlCodes = (
     ("'", '&#39;'),
     ('"', '&quot;'),
     ('>', '&gt;'),
-    ('<', '&lt;'),
-    ('&', '&amp;')
+    ('<', '&lt;')
+    # ,('&', '&amp;')
 )
 def html_decode(s):
     """
@@ -69,6 +69,16 @@ def html_decode(s):
 
     for code in htmlCodes:
         s = s.replace(code[1], code[0])
+    s = s.replace('&amp;', '&')
+    return s
+
+def html_entities(s):
+    """
+    Преобразует все возможные символы в соответствующие HTML-сущности
+    """
+
+    for code in htmlCodes:
+        s = s.replace(code[0], code[1])
     return s
 # -----------------------------------------------
 
