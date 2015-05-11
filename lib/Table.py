@@ -225,9 +225,12 @@ class FitSheetWrapper(object):
         slen = str(label).__len__()
         if r > 0:
             slen = slen + 3
+        else:
+            slen = (slen + 2) * 1.25
+
         if slen > 100:
             slen = 100
-        width = slen * 200
+        width = int(slen * 200)
 
         if width > self.widths.get(c, 0):
             self.widths[c] = width
